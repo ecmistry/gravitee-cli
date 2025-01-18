@@ -129,47 +129,6 @@ python main.py create-api create \
 All actions performed by the CLI are logged to help with debugging and auditing. Use the `--verbose` flag (if implemented) for more detailed output.
 
 ---
-
-## Extending the CLI
-
-### Adding New Commands
-1. **Create a New Command File**:
-    - Add a new Python file in the `commands` directory, e.g., `commands/new_command.py`.
-
-   Example:
-   ```python
-   import typer
-   from config import validate_config
-   from helpers import get_headers
-
-   app = typer.Typer()
-
-   @app.command()
-   def new_command(param: str):
-       api_url, token = validate_config()
-       headers = get_headers(token)
-       response = requests.get(f"{api_url}/new/endpoint", headers=headers)
-
-       if response.ok:
-           typer.echo("Command executed successfully!")
-       else:
-           typer.echo(f"Error: {response.status_code} - {response.text}")
-   ```
-
-2. **Register the Command**:
-    - Import the new command in `main.py` and register it:
-   ```python
-   from commands.new_command import app as new_command_app
-   app.add_typer(new_command_app, name="new-command")
-   ```
-
-3. **Test the Command**:
-    - Run the CLI to verify the new command:
-   ```bash
-   python main.py new-command --help
-   ```
-
----
 ## Extending the CLI
 
 ### Adding New Functions for API Calls
