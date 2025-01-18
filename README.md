@@ -1,6 +1,6 @@
 # Gravitee CLI
 
-Gravitee CLI is a command-line interface (CLI) tool designed to simplify the management of APIs using the Gravitee API Management (APIM) platform. It enables users to configure API settings, create APIs, list available APIs, and extend its functionality with ease.
+Gravitee CLI is a command-line interface (CLI) tool designed to simplify the management of APIs using the Gravitee API Management (APIM) platform. It enables users to configure API settings, create APIs, list available APIs, delete APIs, and extend its functionality with ease.
 
 ---
 
@@ -11,6 +11,7 @@ Gravitee CLI is a command-line interface (CLI) tool designed to simplify the man
 - **API Management**:
     - Create APIs programmatically with customizable parameters.
     - List all available APIs with pagination support.
+    - Delete APIs by ID.
 - **Modular Design**:
     - Easily extend the CLI by adding new commands.
 - **Secure Configuration**:
@@ -64,33 +65,27 @@ python main.py --help
 #### Set API URL
 Set the Gravitee APIM API URL:
 ```bash
-python main.py configure-cli url --api-url <api_url>
+python main.py configure-url --api-url <api_url>
 ```
 Example:
 ```bash
-python main.py configure-cli url --api-url "https://api.gravitee.io"
+python main.py configure-url --api-url "https://api.gravitee.io"
 ```
 
 #### Set Bearer Token
 Set the API Bearer Token:
 ```bash
-python main.py configure-cli token --token <token>
+python main.py configure-token --token <token>
 ```
 Example:
 ```bash
-python main.py configure-cli token --token "your_api_bearer_token"
+python main.py configure-token --token "your_api_bearer_token"
 ```
 
 #### View Configuration
 Display the current API URL and Bearer Token:
 ```bash
-python main.py configure-cli show
-```
-
-#### Reset Configuration
-Reset the configuration to default:
-```bash
-python main.py configure-cli reset
+python main.py configure-show
 ```
 
 ---
@@ -100,7 +95,7 @@ python main.py configure-cli reset
 #### List APIs
 List all available APIs:
 ```bash
-python main.py list-apis all
+python main.py list-apis
 ```
 Example output:
 ```plaintext
@@ -111,43 +106,55 @@ ID: 67890, Name: Another API
 #### Create API
 Create a new API with a name, description, path, and target URL:
 ```bash
-python main.py create-api create --name <api_name> --description <description> --path <api_path> --target <target_url>
-```
-Example:
-```bash
-python main.py create-api create \
+python main.py create-api \
     --name "Event Consumption - HTTP - GET" \
+    --api-version "1.0" \
     --description "Event Consumption - HTTP - Proxy" \
     --path "/demo/http-proxy1" \
     --target "https://api.gravitee.io/echo"
 ```
 
+#### Delete API
+Delete an API by its ID:
+```bash
+python main.py delete-api \
+    --env-id "DEFAULT" \
+    --api-id "96f48eed-55be-436e-b48e-ed55be336e31"
+```
+Example output:
+- Success:
+  ```plaintext
+  API successfully deleted.
+  ```
+- Failure:
+  ```plaintext
+  Error: 404 - {"message": "API not found"}
+  ```
+
 ---
 
 ## Logging
 
-All actions performed by the CLI are logged to help with debugging and auditing. Use the `--verbose` flag (if implemented) for more detailed output.
+All actions performed by the CLI are logged to help with debugging and auditing. Use the `logging` library to log detailed information for each action.
 
 ---
+
 ## Extending the CLI
 
 ### Adding New Functions for API Calls
 
 Follow these steps to add a new function to the CLI for making API calls:
 
-1. **Create a New Command File**:
+1. **Create a New Command Function**:
     - Add a new Python file in the `commands` directory, e.g., `commands/<new_command>.py`.
 
    Example:
    ```python
+   import requests
    import typer
    from config import validate_config
    from helpers import get_headers
-   import requests
 
-   app = typer.Typer()
-
-   @app.command()
    def new_command(param: str):
        """Description of the new command."""
        api_url, token = validate_config()
@@ -164,25 +171,24 @@ Follow these steps to add a new function to the CLI for making API calls:
 2. **Register the Command**:
     - Import the new command in `main.py` and register it with the CLI:
    ```python
-   from commands.<new_command> import app as new_command_app
-   app.add_typer(new_command_app, name="new-command")
+   from commands.<new_command> import new_command
+   app.command(name="new-command")(new_command)
    ```
 
 3. **Test the Command**:
     - Run the CLI to verify the new command:
    ```bash
-   python main.py new-command --help
+   python main.py new-command --param "value"
    ```
 
-4. **Add Parameters and Error Handling**:
-    - Enhance the function by adding parameters with `typer.Option` or `typer.Argument`.
-    - Include error handling for network issues or invalid responses.
+4. **Enhance the Function**:
+    - Add additional parameters using `typer.Option` or `typer.Argument`.
+    - Implement error handling for edge cases like network issues or unexpected API responses.
 
    Example:
    ```python
-   @app.command()
    def enhanced_command(param: str = typer.Option(..., "--param", help="Description of the parameter")):
-       """Enhanced command with better parameter handling."""
+       """Enhanced command with parameter handling."""
        try:
            api_url, token = validate_config()
            headers = get_headers(token)
@@ -197,15 +203,15 @@ Follow these steps to add a new function to the CLI for making API calls:
            typer.echo(f"An error occurred: {str(e)}")
    ```
 
-5. **Update the README**:
-    - Document the new command in the README file, including usage examples and expected output.
+5. **Update Documentation**:
+    - Add examples, usage instructions, and expected outputs to the README file for the new command.
 
 ---
 
 ### Troubleshooting
 
 - **Error: API URL or Bearer Token not configured**:
-  Ensure you have run `configure-cli url` and `configure-cli token` commands before executing other commands.
+  Ensure you have run `configure-url` and `configure-token` commands before executing other commands.
 
 - **Error: Invalid JSON format**:
   Check the payload syntax when passing JSON strings.
