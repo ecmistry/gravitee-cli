@@ -1,6 +1,6 @@
 # Gravitee CLI
 
-Gravitee CLI is a command-line interface (CLI) tool designed to simplify the management of APIs using the Gravitee API Management (APIM) platform. It enables users to configure API settings, create APIs, list available APIs, delete APIs, and extend its functionality with ease.
+Gravitee CLI is a command-line interface (CLI) tool designed to simplify the management of APIs using the Gravitee API Management (APIM) platform. It enables users to configure API settings, create APIs, list available APIs, update APIs, delete APIs, and extend its functionality with ease.
 
 ---
 
@@ -11,6 +11,7 @@ Gravitee CLI is a command-line interface (CLI) tool designed to simplify the man
 - **API Management**:
     - Create APIs programmatically with customizable parameters.
     - List all available APIs with pagination support.
+    - Update APIs with detailed configuration options.
     - Delete APIs by ID.
 - **Modular Design**:
     - Easily extend the CLI by adding new commands.
@@ -114,6 +115,58 @@ python main.py create-api \
     --target "https://api.gravitee.io/echo"
 ```
 
+#### Update API
+Update an existing API with detailed configuration:
+```bash
+python main.py update-api \
+    --env-id "DEFAULT" \
+    --api-id "d84fd4a9-57ef-4da5-8fd4-a957effda517" \
+    --name "Event Consumption - HTTP - GET - Updated" \
+    --api-version "1.0" \
+    --description "Event Consumption - HTTP - Proxy"
+```
+
+##### Payload Structure
+The `update-api` command sends a JSON payload to the Gravitee API Management system. Below is an example payload:
+
+```json
+{
+    "name": "Event Consumption - HTTP - GET - Updated",
+    "apiVersion": "1.0",
+    "definitionVersion": "V4",
+    "type": "PROXY",
+    "description": "Event Consumption - HTTP - Proxy",
+    "listeners": [
+        {
+            "type": "HTTP",
+            "paths": [
+                {"path": "/demo/http-proxy"}
+            ],
+            "entrypoints": [
+                {"type": "http-proxy"}
+            ]
+        }
+    ],
+    "endpointGroups": [
+        {
+            "name": "default-group",
+            "type": "http-proxy",
+            "endpoints": [
+                {
+                    "name": "default",
+                    "type": "http-proxy",
+                    "weight": 1,
+                    "inheritConfiguration": false,
+                    "configuration": {
+                        "target": "https://api.gravitee.io/echo"
+                    }
+                }
+            ]
+        }
+    ]
+}
+```
+
 #### Delete API
 Delete an API by its ID:
 ```bash
@@ -121,21 +174,28 @@ python main.py delete-api \
     --env-id "DEFAULT" \
     --api-id "96f48eed-55be-436e-b48e-ed55be336e31"
 ```
-Example output:
-- Success:
-  ```plaintext
-  API successfully deleted.
-  ```
-- Failure:
-  ```plaintext
-  Error: 404 - {"message": "API not found"}
-  ```
 
 ---
 
 ## Logging
 
 All actions performed by the CLI are logged to help with debugging and auditing. Use the `logging` library to log detailed information for each action.
+
+---
+
+## Troubleshooting
+
+- **Error: API URL or Bearer Token not configured**:
+  Ensure you have run `configure-url` and `configure-token` commands before executing other commands.
+
+- **Error: Invalid JSON format**:
+  Check the payload syntax when passing JSON strings.
+
+- **Connection Timeout**:
+  Verify that the Gravitee APIM instance is reachable and the API URL is correct.
+
+- **Error: Invalid URL Format**:
+  Ensure the provided API URL follows a valid format (e.g., `https://domain.tld`).
 
 ---
 
@@ -180,63 +240,7 @@ Follow these steps to add a new function to the CLI for making API calls:
    ```bash
    python main.py new-command --param "value"
    ```
-
-4. **Enhance the Function**:
-    - Add additional parameters using `typer.Option` or `typer.Argument`.
-    - Implement error handling for edge cases like network issues or unexpected API responses.
-
-   Example:
-   ```python
-   def enhanced_command(param: str = typer.Option(..., "--param", help="Description of the parameter")):
-       """Enhanced command with parameter handling."""
-       try:
-           api_url, token = validate_config()
-           headers = get_headers(token)
-           response = requests.post(f"{api_url}/enhanced/endpoint", headers=headers, json={"param": param})
-
-           if response.ok:
-               typer.echo("Command executed successfully!")
-               typer.echo(response.json())
-           else:
-               typer.echo(f"Error: {response.status_code} - {response.text}")
-       except Exception as e:
-           typer.echo(f"An error occurred: {str(e)}")
-   ```
-
-5. **Update Documentation**:
+4**Update Documentation**:
     - Add examples, usage instructions, and expected outputs to the README file for the new command.
 
 ---
-
-### Troubleshooting
-
-- **Error: API URL or Bearer Token not configured**:
-  Ensure you have run `configure-url` and `configure-token` commands before executing other commands.
-
-- **Error: Invalid JSON format**:
-  Check the payload syntax when passing JSON strings.
-
-- **Connection Timeout**:
-  Verify that the Gravitee APIM instance is reachable and the API URL is correct.
-
-- **Error: Invalid URL Format**:
-  Ensure the provided API URL follows a valid format (e.g., `https://domain.tld`).
-
----
-
-## Contributing
-
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix:
-   ```bash
-   git checkout -b feature-name
-   ```
-3. Commit your changes:
-   ```bash
-   git commit -m "Add new feature"
-   ```
-4. Push to your branch:
-   ```bash
-   git push origin feature-name
-   ```
-5. Create a pull request.
